@@ -1,5 +1,7 @@
 from objc_util import UIColor
 
+#examples
+
 colors = {
     'paper' :           UIColor.colorWithRed(0.898, green=0.8667, blue=0.8627, alpha=1.0),
     'grey5' :           UIColor.colorWithRed(0.3294, green=0.3294, blue=0.3294, alpha=1.0),

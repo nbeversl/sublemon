@@ -1,32 +1,40 @@
 import os
 import ui
 import dialogs
-import re
 import console
-from app_single_launch import AppSingleLaunch
 from objc_util import *
+from editor.app_single_launch import AppSingleLaunch
 from editor.syntax_highlighter import SyntaxHighlighter
 from editor.auto_completer import AutoCompleter
 from editor.text_view_delegate import TextViewDelegate
 from editor.layout import layout
 from editor.base_editor_theme import base_editor_theme
-
+from editor.syntax_empty import EmptySyntax
+from editor.themes.theme_example import theme_light
 
 class BaseEditor(ui.View):
 
 	layout = layout
 	base_editor_theme = base_editor_theme
+	name = "Base Editor"
 
 	def __init__(self):
-		
-		self.name = "Base Editor" 
-		self.current_open_file = None
-		self.current_open_file_hash = None
-		self.saved = None
-		self.width, self.height = ui.get_screen_size()
-		self.frame = (0, self.layout['distance_from_top'], self.width,self.height)
-		self.init_text_view()
-		self.setup_obj_instances()
+
+		self.app = AppSingleLaunch(self.name)
+		if not self.app.is_active():
+			self.current_open_file = None
+			self.current_open_file_hash = None
+			self.saved = None
+			self.width, self.height = ui.get_screen_size()
+			self.frame = (0, self.layout['distance_from_top'], self.width,self.height)
+			self.init_text_view()
+			self.setup_obj_instances()
+			self.setup_buttons(None) # use default
+			self.setup_autocomplete()
+			self.setup_syntax_highlighter(EmptySyntax, theme_light)
+			self.present('fullscreen', hide_title_bar=True)
+			self.tv.begin_editing()
+			self.app.will_present(self)
 
 	def setup_syntax_highlighter(self, syntax, theme):
 		self.syntax_highlighter = SyntaxHighlighter(syntax, theme)
@@ -34,7 +42,7 @@ class BaseEditor(ui.View):
 	def setup_buttons(self, buttons):
 		if not buttons:
 			buttons= {
-				'?' : self.search_node_title,
+				'Open' : self.open_file,
 				'S' : self.manual_save,
 				'↓' : self.hide_keyboard,
 			}
@@ -45,9 +53,22 @@ class BaseEditor(ui.View):
 		self.add_subview(self.autoCompleter.search)
 		self.add_subview(self.autoCompleter.dropDown)
 
+	def open_file(self, sender):
+		open_file = dialogs.pick_document()
+		if open_file:
+			with open(open_file, 'r', encoding='utf-8') as d:
+				contents = d.read()
+			self.tv.text=contents
+			self.current_open_file = open_file
+			self.current_open_file_hash = hash(contents)
+
 	def init_text_view(self):
 		self.tv = ui.TextView()
-		self.tv.frame=(0, self.layout['distance_from_top'], self.width, self.height)
+		self.tv.frame=(
+			0, 
+			self.layout['distance_from_top'], 
+			self.width, 
+			self.height)
 		self.tv.auto_content_inset = True
 		self.tv.background_color = self.base_editor_theme['background_color']
 		self.tv.width = self.width
@@ -84,7 +105,7 @@ class BaseEditor(ui.View):
 		self.add_subview(self.button_line)
 		btn_ln = ObjCInstance(self.button_line)
 		self.tvo.setInputAccessoryView_(btn_ln)
-		
+
 	def setup_obj_instances(self):
 		self.tvo = ObjCInstance(self.tv)
 		self.tvo.setAllowsEditingTextAttributes_(True)	
@@ -101,49 +122,11 @@ class BaseEditor(ui.View):
 			return
 		if self.current_open_file:
 			contents = self.tv.text 
-			with open(os.path.join(self._UrtextProjectList.current_project.path, self.current_open_file),'w', encoding='utf-8') as d:
+			with open(self.current_open_file,'w', encoding='utf-8') as d:
 				d.write(contents)
 			self.current_open_file_hash = hash(contents)
-			future = self._UrtextProjectList.current_project.on_modified(self.current_open_file)
-			if self._UrtextProjectList.current_project.is_async:
-				self.executor.submit(self.refresh_open_file_if_modified, future)
-			else:
-				self.refresh_open_file_if_modified(future)
 			self.saved = True
-	
-	def refresh_open_file_if_modified(self, filenames):
-		if self._UrtextProjectList.current_project.is_async:
-			filenames = filenames.result()
-		if not isinstance(filenames, list):
-			filenames = [filenames]
-		self.saved = False
-		if self.current_open_file in filenames:
-			with open(os.path.join(self._UrtextProjectList.current_project.path, self.current_open_file), encoding="utf-8") as file:
-				contents=file.read()
-			if hash(contents) == self.current_open_file_hash:
-				return False
-			self.open_file(self.current_open_file, save_first=False)
-			
+				
 	def refresh_syntax_highlighting(self, text=''):   
 		self.syntax_highlighter.setAttribs(self.tv, self.tvo, self.theme)
-		
-	def open_file(self, filename, save_first=True):
-		"""
-		Receives a basename.
-		Path used is always the path of the current project
-		"""
-		f = os.path.join(self._UrtextProjectList.current_project.path, filename)
-		if not os.path.exists(f):
-			console.hud_alert('FILE not found. Synced?','error',1)
-			return None
-		
-		if save_first and self.current_open_file != filename:
-			self.save(None)
-
-		changed_files = self._UrtextProjectList.visit_file(f)
-		with open(f,'r', encoding='utf-8') as d:
-			contents=d.read()
-		self.tv.text=contents
-		self.current_open_file = filename
-		self.current_open_file_hash = hash(contents)
-		return changed_files
+	

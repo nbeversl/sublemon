@@ -6,8 +6,10 @@ class SyntaxHighlighter:
 
 		self.syntax = syntax(theme)
 		self.theme = theme
+		self.all_wrappers = []
 		self.push_wrapper, self.pop_wrapper = get_push_pop_patterns(self.syntax.syntax)
-		self.all_wrappers = [self.push_wrapper, self.pop_wrapper]
+		if self.push_wrapper:
+			self.all_wrappers = [self.push_wrapper, self.pop_wrapper]
 
 	@on_main_thread
 	def setAttribs(self, tv, tvo, initial=False):
@@ -111,7 +113,7 @@ def get_push_pop_patterns(syntax):
 			push_wrapper = p['pattern'] 
 			pop_wrapper = p['pop']['pattern']
 			return (push_wrapper, pop_wrapper)
-	return []
+	return [None, None]
 
 def find_wrappers(string, wrappers):
 	found_wrappers = {}

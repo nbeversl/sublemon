@@ -47,8 +47,6 @@ class AutoCompleter:
 			self.items = items
 		self.dropDown.data_source.items = self.items[:30]
 
-		#self.dropDown.data_source = ui.ListDataSource(items=self.items)
-
 	def show(self):
 		self.search.hidden = False
 		self.search.bring_to_front()
@@ -67,9 +65,9 @@ class AutoCompleter:
 
 	def size_fields(self, view_width, view_height):
 		self.search.height = 40
-		self.search.width = view_width * 0.8
-		self.search.x = view_width/2 - self.search.width/2
-		self.search.y = view_height/3 - self.search.height/2
+		self.search.width = view_width * 0.9
+		self.search.x = view_width / 2 - self.search.width / 2
+		self.search.y = view_height / 3 - self.search.height / 2
 		self.search.border_width = 1
 		#self.dropDown.height = 35 * len(self.items.keys())
 		self.dropDown.width = 200
