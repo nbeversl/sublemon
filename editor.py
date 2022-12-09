@@ -29,12 +29,13 @@ class BaseEditor(ui.View):
 			self.frame = (0, self.layout['distance_from_top'], self.width,self.height)
 			self.init_text_view()
 			self.setup_obj_instances()
-			self.setup_buttons(None) # use default
 			self.setup_autocomplete()
 			self.setup_syntax_highlighter(EmptySyntax, theme_light)
-			self.present('fullscreen', hide_title_bar=True)
-			self.tv.begin_editing()
-			self.app.will_present(self)
+
+	def show(self):
+		self.present('fullscreen', hide_title_bar=True)
+		self.tv.begin_editing()
+		self.app.will_present(self)
 
 	def setup_syntax_highlighter(self, syntax, theme):
 		self.syntax_highlighter = SyntaxHighlighter(syntax, theme)
@@ -49,7 +50,8 @@ class BaseEditor(ui.View):
 		self._build_button_line(buttons)
 
 	def setup_autocomplete(self):
-		self.autoCompleter = AutoCompleter(self.width, self.height)
+		self.autoCompleter = AutoCompleter(
+			self.width, self.height, self.layout, self.base_editor_theme)
 		self.add_subview(self.autoCompleter.search)
 		self.add_subview(self.autoCompleter.dropDown)
 
@@ -96,7 +98,7 @@ class BaseEditor(ui.View):
 				self.layout['button_height'])
 			button_line.add_subview(new_button)
 			button_x_position += self.layout['button_width'] + 3
-			new_button.border_width = self.base_editor_theme['button_border_width']
+			new_button.border_width = self.layout['button_border_width']
 			new_button.border_color = self.base_editor_theme['button_border_color']
 			new_button.background_color = self.base_editor_theme['button_background_color']
 
