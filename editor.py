@@ -8,6 +8,7 @@ from editor.syntax_highlighter import SyntaxHighlighter
 from editor.auto_completer import AutoCompleter
 from editor.text_view_delegate import TextViewDelegate
 from editor.layout import layout
+from editor.settings import settings
 from editor.base_editor_theme import base_editor_theme
 from editor.syntax_empty import EmptySyntax
 from editor.themes.theme_example import theme_light
@@ -18,19 +19,22 @@ class BaseEditor(ui.View):
 	base_editor_theme = base_editor_theme
 	name = "Base Editor"
 
-	def __init__(self):
+	def __init__(self, args):
+
+		self.theme = theme_light
+		if 'theme' in args:
+			self.theme = args['theme']
 
 		self.app = AppSingleLaunch(self.name)
 		if not self.app.is_active():
 			self.current_open_file = None
-			self.current_open_file_hash = None
 			self.saved = None
 			self.width, self.height = ui.get_screen_size()
-			self.frame = (0, self.layout['distance_from_top'], self.width,self.height)
+			self.frame = (0, self.layout['text_view_distance_from_top'], self.width, self.height)
 			self.init_text_view()
 			self.setup_obj_instances()
 			self.setup_autocomplete()
-			self.setup_syntax_highlighter(EmptySyntax, theme_light)
+			self.setup_syntax_highlighter(EmptySyntax, self.theme)
 
 	def show(self):
 		self.present('fullscreen', hide_title_bar=True)
@@ -44,10 +48,11 @@ class BaseEditor(ui.View):
 		if not buttons:
 			buttons= {
 				'Open' : self.open_file,
-				'S' : self.manual_save,
+				'Save' : self.save,
+				'Save As...' : self.save_as,
 				'↓' : self.hide_keyboard,
 			}
-		self._build_button_line(buttons)
+		self._build_button_container(buttons)
 
 	def setup_autocomplete(self):
 		self.autoCompleter = AutoCompleter(
@@ -62,51 +67,56 @@ class BaseEditor(ui.View):
 				contents = d.read()
 			self.tv.text=contents
 			self.current_open_file = open_file
-			self.current_open_file_hash = hash(contents)
+			self.refresh_syntax_highlighting()
 
 	def init_text_view(self):
 		self.tv = ui.TextView()
 		self.tv.frame=(
 			0, 
-			self.layout['distance_from_top'], 
+			0,
 			self.width, 
 			self.height)
-		self.tv.auto_content_inset = True
 		self.tv.background_color = self.base_editor_theme['background_color']
 		self.tv.width = self.width
 		self.tv.delegate = TextViewDelegate(self)
 		self.add_subview(self.tv)
 
-	def _build_button_line(self, buttons):
-		button_x_position = 0
-		button_y_position = 10
+	def _build_button_container(self, buttons):
+		num_buttons = len(buttons)
+		num_button_lines = 1
+		button_width_with_spacing = int( 
+			( self.width - self.layout['button_horizontal_spacing'] ) / num_buttons)
+		while button_width_with_spacing < ( self.layout['min_button_width'] + self.layout['button_horizontal_spacing']):
+			num_button_lines +=1
+			button_width_with_spacing = int ( ((self.width - self.layout['button_horizontal_spacing']) * num_button_lines) / num_buttons ) 
+
+		button_width = button_width_with_spacing - self.layout['button_horizontal_spacing']
+		button_x_position = self.layout['button_horizontal_spacing']
+		button_y_position = self.layout['button_vertical_spacing']
 		button_line = ui.View()
-		button_line.name = 'buttonLine'
 		button_line.background_color = self.base_editor_theme['button_line_background_color']
 
 		for button_character in buttons:
 			new_button = ui.Button(title=button_character)
 			new_button.action = buttons[button_character]
-
 			new_button.corner_radius = self.layout['button_corner_radius']
-			if button_x_position >= self.width :
-				button_y_position += self.layout['button_container_height']
-				button_x_position = 0
+			new_button.height = self.layout['button_height']
+
+			if button_x_position + button_width >= self.width :
+				button_y_position += self.layout['button_height'] + self.layout['button_vertical_spacing']
+				button_x_position = self.layout['button_horizontal_spacing']
 			new_button.frame = (button_x_position, 
-				button_y_position, 
-				self.layout['button_width'], 
+				button_y_position,
+				button_width,
 				self.layout['button_height'])
 			button_line.add_subview(new_button)
-			button_x_position += self.layout['button_width'] + 3
+			button_x_position += button_width + self.layout['button_horizontal_spacing']
 			new_button.border_width = self.layout['button_border_width']
 			new_button.border_color = self.base_editor_theme['button_border_color']
 			new_button.background_color = self.base_editor_theme['button_background_color']
 
-		self.button_line = button_line
-		self.button_line.height = button_line.height + 5 # add margin
-		self.add_subview(self.button_line)
-		btn_ln = ObjCInstance(self.button_line)
-		self.tvo.setInputAccessoryView_(btn_ln)
+		self.add_subview(button_line)
+		self.tvo.setInputAccessoryView_(ObjCInstance(button_line))
 
 	def setup_obj_instances(self):
 		self.tvo = ObjCInstance(self.tv)
@@ -115,20 +125,29 @@ class BaseEditor(ui.View):
 	def hide_keyboard(self, sender):
 		self.tv.end_editing()
 
-	def manual_save(self, sender):
+	def save_as(self, sender):
+		self.current_open_file = console.input_alert(
+			title='Filename',
+			message='Note files will be saved in the Pythonista folder, also accessible via iCloud')
 		self.save(None)
-		console.hud_alert('Saved','success',0.5)
 
 	def save(self, sender):
 		if self.saved:
 			return
 		if self.current_open_file:
+			filename = os.path.basename(self.current_open_file)
+			copy_of_file = os.path.join(
+				settings['base_dir'],
+				filename)
+
 			contents = self.tv.text 
-			with open(self.current_open_file,'w', encoding='utf-8') as d:
+			with open(copy_of_file, 'w', encoding='utf-8') as d:
 				d.write(contents)
-			self.current_open_file_hash = hash(contents)
 			self.saved = True
-				
+			console.hud_alert('Saved','success',0.5)
+		else:
+			self.save_as(None)
+
 	def refresh_syntax_highlighting(self, text=''):   
 		self.syntax_highlighter.setAttribs(self.tv, self.tvo, self.theme)
 	

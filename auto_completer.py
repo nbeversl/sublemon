@@ -46,7 +46,7 @@ class AutoCompleter:
 			self.items = list(items.keys())
 		if isinstance(items, list):
 			self.items = items
-		self.dropDown.data_source.items = self.items[:30]
+		self.dropDown.data_source.items = self.items
 
 	def show(self):
 		self.search.hidden = False
@@ -68,7 +68,7 @@ class AutoCompleter:
 		self.search.height = layout['search_box_height']
 		self.search.width = view_width * 0.8
 		self.search.x = view_width / 10
-		self.search.y = layout['distance_from_top'] + layout['padding']['md']
+		self.search.y = layout['text_view_distance_from_top'] + layout['padding']['md']
 		self.search.border_width = layout['button_border_width']
 		self.dropDown.height = view_height
 
