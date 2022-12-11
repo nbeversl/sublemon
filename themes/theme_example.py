@@ -1,5 +1,5 @@
-from editor.themes.colors import colors
-from editor.themes.fonts import fonts
+from sublemon.themes.colors import colors
+from sublemon.themes.fonts import fonts
 
 # example theme
 

@@ -3,15 +3,15 @@ import ui
 import dialogs
 import console
 from objc_util import *
-from editor.app_single_launch import AppSingleLaunch
-from editor.syntax_highlighter import SyntaxHighlighter
-from editor.auto_completer import AutoCompleter
-from editor.text_view_delegate import TextViewDelegate
-from editor.layout import layout
-from editor.settings import settings
-from editor.base_editor_theme import base_editor_theme
-from editor.syntax_empty import EmptySyntax
-from editor.themes.theme_example import theme_light
+from sublemon.app_single_launch import AppSingleLaunch
+from sublemon.syntax_highlighter import SyntaxHighlighter
+from sublemon.auto_completer import AutoCompleter
+from sublemon.text_view_delegate import TextViewDelegate
+from sublemon.layout import layout
+from sublemon.settings import settings
+from sublemon.base_editor_theme import base_editor_theme
+from sublemon.syntax_empty import EmptySyntax
+from sublemon.themes.theme_example import theme_light
 
 class BaseEditor(ui.View):
 
