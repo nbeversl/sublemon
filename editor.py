@@ -10,7 +10,7 @@ from sublemon.text_view_delegate import TextViewDelegate
 from sublemon.layout import layout
 from sublemon.settings import settings
 from sublemon.base_editor_theme import base_editor_theme
-from sublemon.syntax_empty import EmptySyntax
+from sublemon.plaintext_syntax import PlaintextSyntax
 from sublemon.themes.theme_example import theme_light
 
 class BaseEditor(ui.View):
@@ -34,7 +34,7 @@ class BaseEditor(ui.View):
 			self.init_text_view()
 			self.setup_obj_instances()
 			self.setup_autocomplete()
-			self.setup_syntax_highlighter(EmptySyntax, self.theme)
+			self.setup_syntax_highlighter(PlaintextSyntax, self.theme)
 
 	def show(self):
 		self.present('fullscreen', hide_title_bar=True)
@@ -84,17 +84,19 @@ class BaseEditor(ui.View):
 	def _build_button_container(self, buttons):
 		num_buttons = len(buttons)
 		num_button_lines = 1
-		button_width_with_spacing = int( 
-			( self.width - self.layout['button_horizontal_spacing'] ) / num_buttons)
+		button_space_per_line = self.width - self.layout['button_horizontal_spacing']
+		button_width_with_spacing = int( button_space_per_line / num_buttons )
 		while button_width_with_spacing < ( self.layout['min_button_width'] + self.layout['button_horizontal_spacing']):
-			num_button_lines +=1
-			button_width_with_spacing = int ( ((self.width - self.layout['button_horizontal_spacing']) * num_button_lines) / num_buttons ) 
+			num_button_lines += 1
+			button_width_with_spacing = int( ( button_space_per_line * num_button_lines ) / ( num_buttons + 1 ))
 
 		button_width = button_width_with_spacing - self.layout['button_horizontal_spacing']
 		button_x_position = self.layout['button_horizontal_spacing']
 		button_y_position = self.layout['button_vertical_spacing']
 		button_line = ui.View()
 		button_line.background_color = self.base_editor_theme['button_line_background_color']
+		button_line.height = self.layout['button_height'] * num_button_lines 
+		button_line.height += self.layout['button_vertical_spacing'] * num_button_lines
 
 		for button_character in buttons:
 			new_button = ui.Button(title=button_character)
@@ -151,3 +153,4 @@ class BaseEditor(ui.View):
 	def refresh_syntax_highlighting(self, text=''):   
 		self.syntax_highlighter.setAttribs(self.tv, self.tvo, self.theme)
 	
+

@@ -6,6 +6,7 @@ class AutoCompleter:
 	""" AutoCompleteter Base Class """
 
 	def __init__(self, view_width, view_height, layout, theme):
+		self.view_height = view_height
 		self.search = ui.TextField()
 		self.search.hidden = True
 		self.search.delegate = SearchFieldDelegate()
@@ -47,6 +48,11 @@ class AutoCompleter:
 		if isinstance(items, list):
 			self.items = items
 		self.dropDown.data_source.items = self.items
+		max_items_showing = ( self.view_height - self.search.height ) / len(self.items)
+		if len(self.dropDown.data_source.items) > max_items_showing:
+			self.dropDown.height = self.view_height
+		else:
+			self.dropDown.height = self.search.height * len(self.items)
 
 	def show(self):
 		self.search.hidden = False
