@@ -47,12 +47,15 @@ class AutoCompleter:
 			self.items = list(items.keys())
 		if isinstance(items, list):
 			self.items = items
-		self.dropDown.data_source.items = self.items
-		max_items_showing = ( self.view_height - self.search.height ) / len(self.items)
-		if len(self.dropDown.data_source.items) > max_items_showing:
-			self.dropDown.height = self.view_height
-		else:
-			self.dropDown.height = self.search.height * len(self.items)
+		if self.items:
+			self.dropDown.data_source.items = self.items
+			max_items_showing = ( 
+				self.view_height - self.search.height 
+				) / len(self.items)
+			if len(self.dropDown.data_source.items) > max_items_showing:
+				self.dropDown.height = self.view_height
+			else:
+				self.dropDown.height = self.search.height * len(self.items)
 
 	def show(self):
 		self.search.hidden = False
