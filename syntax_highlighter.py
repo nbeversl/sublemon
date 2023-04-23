@@ -97,7 +97,7 @@ def nest_colors(str_obj, current_text, offset, parse_patterns):
 						NSRange(group_start + offset, group_length))
 
 					if 'color' in pattern['groups'][g]:
-					  str_obj.addAttribute_value_range_(
+					  	str_obj.addAttribute_value_range_(
 						ObjCInstance(c_void_p.in_dll(c,'NSForegroundColorAttributeName')),
 						pattern['groups'][g]['color'],
 						NSRange(group_start + offset, group_length)

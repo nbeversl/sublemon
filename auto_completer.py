@@ -19,12 +19,12 @@ class AutoCompleter:
 		self.dropDown.data_source = ui.ListDataSource([])
 
 	def textfield_did_change(self, textfield):
-		entry = textfield.text
+		entry = textfield.text.lower()
 		fuzzy_options = sorted(
 			self.items,
-			key =lambda option: fuzz.ratio(
-				entry.lower(), 
-				option.lower()), 
+			key = lambda option: fuzz.ratio(
+				entry,
+				self.items_comparision[option]), 
 			reverse=True)
 		self.dropDown.data_source.items=fuzzy_options[:30]
 
@@ -48,6 +48,9 @@ class AutoCompleter:
 		if isinstance(items, list):
 			self.items = items
 		if self.items:
+			self.items_comparision = {}
+			for item in items:
+				self.items_comparision[item] = item.lower()
 			self.dropDown.data_source.items = self.items
 			max_items_showing = ( 
 				self.view_height - self.search.height 

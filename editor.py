@@ -26,15 +26,14 @@ class BaseEditor(ui.View):
 			self.theme = args['theme']
 
 		self.app = AppSingleLaunch(self.name)
-		if not self.app.is_active():
-			self.current_open_file = None
-			self.saved = None
-			self.width, self.height = ui.get_screen_size()
-			self.frame = (0, self.layout['text_view_distance_from_top'], self.width, self.height)
-			self.init_text_view()
-			self.setup_obj_instances()
-			self.setup_autocomplete()
-			self.setup_syntax_highlighter(PlaintextSyntax, self.theme)
+		self.current_open_file = None
+		self.saved = None
+		self.width, self.height = ui.get_screen_size()
+		self.frame = (0, self.layout['text_view_distance_from_top'], self.width, self.height)
+		self.init_text_view()
+		self.setup_obj_instances()
+		self.setup_autocomplete()
+		self.setup_syntax_highlighter(PlaintextSyntax, self.theme)
 
 	def show(self):
 		self.present('fullscreen', hide_title_bar=True)
