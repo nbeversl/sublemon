@@ -3,7 +3,6 @@ import ui
 import dialogs
 import console
 from objc_util import *
-from sublemon.app_single_launch import AppSingleLaunch
 from sublemon.syntax_highlighter import SyntaxHighlighter
 from sublemon.auto_completer import AutoCompleter
 from sublemon.text_view_delegate import TextViewDelegate
@@ -25,7 +24,6 @@ class BaseEditor(ui.View):
 		if 'theme' in args:
 			self.theme = args['theme']
 
-		self.app = AppSingleLaunch(self.name)
 		self.current_open_file = None
 		self.saved = None
 		self.width, self.height = ui.get_screen_size()
@@ -38,7 +36,6 @@ class BaseEditor(ui.View):
 	def show(self):
 		self.present('fullscreen', hide_title_bar=True)
 		self.tv.begin_editing()
-		self.app.will_present(self)
 
 	def setup_syntax_highlighter(self, syntax, theme):
 		self.syntax_highlighter = SyntaxHighlighter(syntax, theme)
