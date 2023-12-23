@@ -173,7 +173,9 @@ class BaseEditor(ui.View):
 				ask = self.handle_changed_contents(self.current_open_file) 
 				if ask != 'Overwrite (use current view)':
 					return False
-			contents = self.tv.text 
+			contents = self.tv.text
+			if os.path.exists(self.current_open_file):
+				os.remove(self.current_open_file)
 			with open(self.current_open_file, 'w', encoding='utf-8') as d:
 				d.write(contents)
 			self.saved = True
