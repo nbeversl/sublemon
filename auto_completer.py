@@ -17,14 +17,16 @@ class AutoCompleter:
 		self.dropDown.hidden = True
 		self.size_fields(view_width, view_height, layout)
 		self.dropDown.data_source = ui.ListDataSource([])
-		self.current_entry = ''
-		self.current_items = []
-		self.all_items = []
+		self.reset()
 
 	def textfield_did_change(self, textfield):
 		self.update_and_sort_options(textfield)
 
-	def update_and_sort_options(self, textfield, all_items_updated=False):
+	def update_and_sort_options(self,
+		textfield,
+		all_items_updated=False,
+		allow_new=False):
+
 		new_entry = textfield.text.lower()
 		characters_typed = len(new_entry)
 		words_typed = new_entry.split(' ')
@@ -50,8 +52,9 @@ class AutoCompleter:
 			]
 		
 		word_matching_items = [
-			i for i in items if [word for word in words_typed if word in lowered_items[i]['words']]
-		]
+			i for i in items if [
+				word for word in words_typed if word in lowered_items[i]['words']]
+			]
 
 		remaining_items = [
 			i for i in items if i not in partial_matching_items and (
@@ -65,11 +68,10 @@ class AutoCompleter:
 				new_entry,
 				self.items_comparision[option]) if option in self.items_comparision else 0, 
 			reverse=True)
-		total_options = first_char_matching_items
+		total_options=[]
+		total_options.extend(first_char_matching_items)
 		total_options.extend(partial_matching_items)
-		total_options.extend(fuzzy_options)
-		if len(total_options) >= 15:
-			total_options = total_options[:15]
+		total_options.extend(fuzzy_options[:20])
 		self.current_entry = new_entry
 		self._set_current_items(total_options)
 
@@ -83,6 +85,9 @@ class AutoCompleter:
 		self.all_items = []
 		self.current_items = []
 		self.items_comparision = {}
+		self.allowing_new = False
+		self.current_entry = ''
+		self.showing = None
 
 	def tableview_did_select(self, tableview, section, row):
 		self.search.text = self.dropDown.data_source.items[row]
@@ -90,6 +95,9 @@ class AutoCompleter:
 		return self.action(self.dropDown.data_source.items[row])
 
 	def _set_current_items(self, items):
+		self.current_items = list(items)
+		if self.allowing_new and self.current_entry.strip():
+			items.insert(0, self.current_entry.strip())
 		self.items_comparision = {}
 		for item in items:
 			self.items_comparision[item] = item.lower()
@@ -104,13 +112,18 @@ class AutoCompleter:
 			self.dropDown.height = self.view_height
 		else:
 			self.dropDown.height = self.search.height * len(items)
-		self.current_items = items
 
-	def set_items(self, items):
+	def set_items(self,
+		items,
+		name,
+		allow_new=False):
+
 		if isinstance(items, dict):
 			self.all_items = list(items.keys())
 		if isinstance(items, list):
 			self.all_items = items
+		self.allowing_new = allow_new
+		self.showing = name
 		self.update_and_sort_options(self.search, all_items_updated=True)
 
 	def show(self):

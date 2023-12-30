@@ -12,9 +12,14 @@ class SyntaxHighlighter:
 			self.all_wrappers = [self.push_wrapper, self.pop_wrapper]
 
 	@on_main_thread
-	def setAttribs(self, tv, tvo, highlight_range=None, initial=False):
+	def setAttribs(self,
+		tv,
+		tvo,
+		highlight_range=None,
+		initial=False):
 
 		current_text = tv.text
+		current_position = tv.selected_range[0]
 		str_obj = ObjCClass('NSMutableAttributedString').alloc().initWithString_(current_text)
 		original_str_obj = ObjCClass('NSMutableAttributedString').alloc().initWithString_(current_text)  
 		len_current_text = len(current_text)
@@ -69,6 +74,10 @@ class SyntaxHighlighter:
 		if initial or (str_obj != original_str_obj):
 		  tvo.setAllowsEditingTextAttributes_(True)
 		  tvo.setAttributedText_(str_obj)
+		if current_position < len(current_text):			
+			tv.selected_range = (current_position, current_position)
+			tv.content_inset = (0,0,0,0)
+			tvo.scrollRangeToVisible(NSRange(current_position, 1))
 
 def nest_colors(str_obj, current_text, offset, parse_patterns):
 	

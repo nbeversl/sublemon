@@ -104,6 +104,8 @@ class BaseEditor(ui.View):
 			self.height)
 		
 		self.tv.width = self.width
+		self.tv.content_size = (self.width, self.height)
+		self.tv.content_inset = (0,0,0,0)
 		self.tv.delegate = TextViewDelegate(self)
 		self.add_subview(self.tv)
 
