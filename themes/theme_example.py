@@ -10,6 +10,11 @@ theme_light = {
     'font' : {
         'regular' : fonts['Courier New'],
         'bold' :    fonts['Courier New Bold'],
-    },  
-
+    },
+    'autocompleter': {
+        'background_color' : "#ffffff",
+        'foreground_color' : "#000000",
+        'search_field_background_color': colors['white'],
+        'search_field_border_color': 'black',
+    }
 }

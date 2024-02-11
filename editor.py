@@ -98,7 +98,7 @@ class BaseEditor(ui.View):
 			self.refresh_syntax_highlighting()
 
 	def choose_theme(self, sender):
-		self.autoCompleter.set_items(items=self.theme_options)
+		self.autoCompleter.set_items(self.theme_options, 'set_theme')
 		self.autoCompleter.set_action(self.set_theme)
 		self.autoCompleter.show()
 

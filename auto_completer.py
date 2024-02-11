@@ -3,20 +3,25 @@ from objc_util import *
 from thefuzz import fuzz
 
 class AutoCompleter:
-	""" AutoCompleteter Base Class """
 
 	def __init__(self, view_width, view_height, layout, theme):
 		self.view_height = view_height
 		self.search = ui.TextField()
+		self.search.text_color = theme['autocompleter']['foreground_color']
 		self.search.hidden = True
 		self.search.delegate = SearchFieldDelegate()
 		self.search.delegate.textfield_did_change = self.textfield_did_change
 		self.dropDown = ui.TableView()
+		tfo = ObjCInstance(self.search).textField()
+		tfo.backgroundColor = theme['autocompleter']['search_field_background_color']
+		self.search.border_color = theme['autocompleter']['search_field_border_color']
+		self.search.border_width = 1
 		self.dropDown.delegate = SearchFieldDelegate()
 		self.dropDown.delegate.tableview_did_select = self.tableview_did_select
 		self.dropDown.hidden = True
 		self.size_fields(view_width, view_height, layout)
-		self.dropDown.data_source = ui.ListDataSource([])
+		self.dropDown.data_source = ListDataSourceCustom([])
+		self.dropDown.data_source.theme = theme
 		self.reset()
 
 	def textfield_did_change(self, textfield):
@@ -134,7 +139,6 @@ class AutoCompleter:
 		self.search.text=''
 		self.dropDown.hidden = False
 		self.dropDown.bring_to_front()
-		self.dropDown.data_source.background_color = '#e5dddc'
 		self.dropDown.x = self.search.x
 		self.dropDown.y = self.search.y + self.search.height
 		self.dropDown.width = self.search.width
@@ -156,3 +160,15 @@ class SearchFieldDelegate:
 	
 	def __init__(self):
 		pass
+
+class ListDataSourceCustom(ui.ListDataSource):
+
+	def tableview_cell_for_row(self, tableview, section, row):
+		cell = ui.TableViewCell()
+		cell.text_label.text = self.items[row]
+		cell.text_label.text_color = self.theme['autocompleter']['foreground_color']
+		cell.text_label.background_color = self.theme['autocompleter']['background_color']
+		cell.background_color = self.theme['autocompleter']['background_color']		
+		return cell
+
+
