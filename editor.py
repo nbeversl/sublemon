@@ -47,6 +47,20 @@ class BaseEditor(ui.View):
 		self.set_theme(self.theme['name'])
 		self.setup_syntax_highlighter()
 
+	def keyboard_frame_did_change(self, frame):
+		if frame[3] > 0:
+			self.tv.frame=(
+				0, 
+				0,
+				self.width, 
+				self.height - frame[3])
+		else:
+			self.tv.frame=(
+				0, 
+				0,
+				self.width, 
+				self.height)
+
 	def show(self):
 		self.present('fullscreen', hide_title_bar=True)
 		self.tv.begin_editing()
@@ -106,6 +120,7 @@ class BaseEditor(ui.View):
 		self.tv.width = self.width
 		self.tv.content_size = (self.width, self.height)
 		self.tv.content_inset = (0,0,0,0)
+		self.tv.auto_content_inset = True
 		self.tv.delegate = TextViewDelegate(self)
 		self.add_subview(self.tv)
 
