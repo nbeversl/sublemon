@@ -1,4 +1,5 @@
 from objc_util import *
+import re
 
 class SyntaxHighlighter:
 
@@ -29,10 +30,23 @@ class SyntaxHighlighter:
 			self.theme['font']['regular'], 
 			NSRange(0,len_current_text))
 
+		paragraph_style = ObjCClass('NSMutableParagraphStyle').new()
+		paragraph_style.setHeadIndent_(24)
+		
+		# block indentation
+		for tab in re.finditer('(?:\t).*?\n', current_text):
+			length = tab.end() - tab.start()
+			str_obj.addAttribute_value_range_(
+				ObjCInstance(
+					c_void_p.in_dll(c,'NSParagraphStyleAttributeName')),
+				paragraph_style,
+				NSRange(tab.start(), length)
+			)
+
 		str_obj.addAttribute_value_range_(
 			ObjCInstance(c_void_p.in_dll(c,'NSForegroundColorAttributeName')), 
 			self.theme['foreground_color'],
-			NSRange(0,len_current_text))
+			NSRange(0, len_current_text))
 
 		nested_level = 0
 		
@@ -118,7 +132,7 @@ def nest_colors(str_obj, current_text, offset, parse_patterns):
 						NSRange(group_start + offset, group_length))
 
 					if 'color' in pattern['groups'][g]:
-					  	str_obj.addAttribute_value_range_(
+						str_obj.addAttribute_value_range_(
 						ObjCInstance(c_void_p.in_dll(c,'NSForegroundColorAttributeName')),
 						pattern['groups'][g]['color'],
 						NSRange(group_start + offset, group_length)
