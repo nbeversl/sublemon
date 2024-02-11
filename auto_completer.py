@@ -72,6 +72,8 @@ class AutoCompleter:
 		total_options.extend(first_char_matching_items)
 		total_options.extend(partial_matching_items)
 		total_options.extend(fuzzy_options[:20])
+		if len(total_options) > 1 and total_options[0] == total_options[1]:
+			total_options = total_options[1:]
 		self.current_entry = new_entry
 		self._set_current_items(total_options)
 
