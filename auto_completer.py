@@ -12,6 +12,7 @@ class AutoCompleter:
 		self.search.delegate = SearchFieldDelegate()
 		self.search.delegate.textfield_did_change = self.textfield_did_change
 		self.dropDown = ui.TableView()
+		self.dropDown.separator_color = theme['autocompleter']['separator_color']
 		tfo = ObjCInstance(self.search).textField()
 		tfo.backgroundColor = theme['autocompleter']['search_field_background_color']
 		self.search.border_color = theme['autocompleter']['search_field_border_color']
@@ -168,7 +169,7 @@ class ListDataSourceCustom(ui.ListDataSource):
 		cell.text_label.text = self.items[row]
 		cell.text_label.text_color = self.theme['autocompleter']['foreground_color']
 		cell.text_label.background_color = self.theme['autocompleter']['background_color']
-		cell.background_color = self.theme['autocompleter']['background_color']		
+		cell.background_color = self.theme['autocompleter']['background_color']
 		return cell
 
 
