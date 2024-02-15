@@ -104,7 +104,8 @@ class AutoCompleter:
 
 	def _set_current_items(self, items):
 		self.current_items = list(items)
-		if self.allowing_new and self.current_entry.strip():
+		if self.allowing_new and self.current_entry.strip() and (
+			self.current_entry.strip() != self.current_items[0]):
 			items.insert(0, self.current_entry.strip())
 		self.items_comparision = {}
 		for item in items:

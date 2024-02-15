@@ -29,18 +29,22 @@ class SyntaxHighlighter:
 				c_void_p.in_dll(c,'NSFontAttributeName')), 
 			self.theme['font']['regular'], 
 			NSRange(0,len_current_text))
-
-		paragraph_style = ObjCClass('NSMutableParagraphStyle').new()
-		paragraph_style.setHeadIndent_(24)
 		
 		# block indentation
-		for tab in re.finditer('(?:\t).*?\n', current_text):
-			length = tab.end() - tab.start()
+		for tab in re.finditer('(\t+)(.*?)\n', current_text):
+			text_obj = ObjCClass('NSMutableAttributedString').alloc().initWithString_(tab.group(1))
+			text_obj.addAttribute_value_range_(
+				ObjCInstance(
+					c_void_p.in_dll(c,'NSFontAttributeName')), 
+				self.theme['font']['regular'], 
+				NSRange(0,len(tab.group(1))))
+			paragraph_style = ObjCClass('NSMutableParagraphStyle').new()
+			paragraph_style.setHeadIndent_(text_obj.size().width)
 			str_obj.addAttribute_value_range_(
 				ObjCInstance(
 					c_void_p.in_dll(c,'NSParagraphStyleAttributeName')),
 				paragraph_style,
-				NSRange(tab.start(), length)
+				NSRange(tab.start(), tab.end() - tab.start())
 			)
 
 		str_obj.addAttribute_value_range_(
