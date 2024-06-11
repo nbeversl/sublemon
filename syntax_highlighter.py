@@ -84,6 +84,9 @@ class SyntaxHighlighter:
 
 		if highlight_range and 'highlight_color' in self.theme:
 			length = highlight_range[1] - highlight_range[0]
+			# workaround
+			if length >= len(current_text):
+				length = len(current_text) - 1
 			str_obj.addAttribute_value_range_(
 				ObjCInstance(c_void_p.in_dll(c,'NSBackgroundColorAttributeName')), 
 				self.theme['highlight_color'],
