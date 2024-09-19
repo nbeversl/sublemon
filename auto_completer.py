@@ -9,6 +9,7 @@ class AutoCompleter:
 		self.search = ui.TextField()
 		self.search.text_color = theme['autocompleter']['foreground_color']
 		self.search.hidden = True
+		self.items_dict = None
 		self.search.delegate = SearchFieldDelegate()
 		self.search.delegate.textfield_did_change = self.textfield_did_change
 		self.dropDown = ui.TableView()
@@ -100,6 +101,8 @@ class AutoCompleter:
 	def tableview_did_select(self, tableview, section, row):
 		self.search.text = self.dropDown.data_source.items[row]
 		self.hide()
+		if self.items_dict:
+			return self.action(self.items_dict[self.dropDown.data_source.items[row]])
 		return self.action(self.dropDown.data_source.items[row])
 
 	def _set_current_items(self, items):
@@ -129,8 +132,10 @@ class AutoCompleter:
 
 		if isinstance(items, dict):
 			self.all_items = list(items.keys())
+			self.items_dict = items
 		if isinstance(items, list):
 			self.all_items = items
+			self.items_dict = None
 		self.allowing_new = allow_new
 		self.showing = name
 		self.update_and_sort_options(self.search, all_items_updated=True)
