@@ -1,166 +1,127 @@
 from objc_util import *
 import re
+import time
+import urtext.syntax as syntax
 
 class SyntaxHighlighter:
 
-	def __init__(self, syntax, theme):
+	def __init__(self, syntax, theme, text_view, tvo):
 
 		self.syntax = syntax(theme)
 		self.theme = theme
+		self.tv = text_view
+		self.tvo = tvo
+		self.refresh_timer = None
 		self.all_wrappers = []
-		self.push_wrapper, self.pop_wrapper = get_push_pop_patterns(self.syntax.syntax)
-		if self.push_wrapper:
-			self.all_wrappers = [self.push_wrapper, self.pop_wrapper]
+		self.cached_strings = []
+		self.updating = False
+		self.wait = .5
+		self.last_call_time = 0 
+
+	def refresh(self, highlight_range, initial=False):
+		if initial:
+			self._refresh(highlight_range=highlight_range)
+			return 
+		current_time = time.time()
+		if current_time - self.last_call_time >= self.wait:
+			self.last_call_time = current_time
+			self._refresh(highlight_range=highlight_range)
+
+	def _refresh(self, highlight_range=None, initial=False):
+		str_obj = self._get_cached_string(self.tv.text)
+		font_attr = ObjCInstance(c_void_p.in_dll(c, 'NSFontAttributeName'))
+		color_attr = ObjCInstance(c_void_p.in_dll(c, 'NSForegroundColorAttributeName'))
+
+		str_obj.addAttribute_value_range_(
+			font_attr, 
+			self.theme['font']['regular'], 
+			NSRange(0, len(self.tv.text)))
+
+		str_obj.addAttribute_value_range_(
+			color_attr, 
+			self.theme['foreground_color'],
+			NSRange(0, len(self.tv.text)))
+		
+		if self.refresh_timer is not None:
+			self.refresh_timer.cancel()
+
+		self._performRefresh(
+			str_obj,
+			self.tv.text,
+			0,
+			self.syntax.syntax,
+			font_attr,
+			color_attr,
+			initial=True)
+
+		self._updateView(str_obj, highlight_range=highlight_range)
+
+	def _get_cached_string(self, text):
+		if self.cached_strings:
+			# Reuse the last cached string if it's the same length
+			cached_str = self.cached_strings.pop()
+			if cached_str.length() == len(text):
+				cached_str.mutableString().setString_(text)
+				return cached_str
+		return ObjCClass('NSMutableAttributedString').alloc().initWithString_(text)
+
+	def _performRefresh(self, str_obj, substring, offset, syntax_scope, font_attr, color_attr, initial=False, highlight_range=None):
+	
+		if initial: # block indentation
+			font = self.theme['font']['regular']
+			paragraph_style = ObjCClass('NSMutableParagraphStyle').new()
+			for tab in re.finditer('(\t+)(.*?)\n', substring):
+				text_obj = ObjCClass('NSMutableAttributedString').alloc().initWithString_(tab.group(1))
+				text_obj.addAttribute_value_range_(
+					ObjCInstance(c_void_p.in_dll(c,'NSFontAttributeName')), 
+					font,
+					NSRange(0,len(tab.group(1))))
+				paragraph_style.setHeadIndent_(text_obj.size().width)
+				str_obj.addAttribute_value_range_(
+					ObjCInstance(c_void_p.in_dll(c,'NSParagraphStyleAttributeName')),
+					paragraph_style,
+					NSRange(tab.start(), tab.end() - tab.start()))
+		for item in syntax_scope:
+			scope = syntax_scope[item]
+			matches = scope['pattern'].finditer(substring)
+			for m in matches:
+				start, end = m.span()
+				length = end - start
+				self_attr = scope['self'] 
+				if 'font' in self_attr:
+					str_obj.addAttribute_value_range_(font_attr, self_attr['font'], NSRange(start+offset, length))
+				if 'color' in self_attr:
+					str_obj.addAttribute_value_range_(color_attr, self_attr['color'], NSRange(start+offset, length))
+				if 'groups' in self_attr:
+					for group in self_attr['groups']:
+						str_obj.addAttribute_value_range_(color_attr, self_attr['groups'][group],
+							NSRange(m.start(group)+offset,
+								m.end(group) - m.start(group)))
+				if 'scoped' in scope:
+					self._performRefresh(
+						str_obj,
+						substring[start:end],
+						start + offset,
+						scope['scoped'],
+						font_attr,
+						color_attr)
 
 	@on_main_thread
-	def setAttribs(self,
-		tv,
-		tvo,
-		highlight_range=None,
-		initial=False):
+	def _updateView(self, str_obj, highlight_range=None):
+		current_position = self.tv.selected_range[0]
+		self.tvo.setAllowsEditingTextAttributes_(True)
+		self.tvo.setAttributedText_(str_obj)
+		bg_color_attr = ObjCInstance(c_void_p.in_dll(c, 'NSBackgroundColorAttributeName'))
 
-		current_text = tv.text
-		current_position = tv.selected_range[0]
-		str_obj = ObjCClass('NSMutableAttributedString').alloc().initWithString_(current_text)
-		original_str_obj = ObjCClass('NSMutableAttributedString').alloc().initWithString_(current_text)  
-		len_current_text = len(current_text)
-		str_obj.addAttribute_value_range_(
-			ObjCInstance(
-				c_void_p.in_dll(c,'NSFontAttributeName')), 
-			self.theme['font']['regular'], 
-			NSRange(0,len_current_text))
-		
-		# block indentation
-		for tab in re.finditer('(\t+)(.*?)\n', current_text):
-			text_obj = ObjCClass('NSMutableAttributedString').alloc().initWithString_(tab.group(1))
-			text_obj.addAttribute_value_range_(
-				ObjCInstance(
-					c_void_p.in_dll(c,'NSFontAttributeName')), 
-				self.theme['font']['regular'], 
-				NSRange(0,len(tab.group(1))))
-			paragraph_style = ObjCClass('NSMutableParagraphStyle').new()
-			paragraph_style.setHeadIndent_(text_obj.size().width)
-			str_obj.addAttribute_value_range_(
-				ObjCInstance(
-					c_void_p.in_dll(c,'NSParagraphStyleAttributeName')),
-				paragraph_style,
-				NSRange(tab.start(), tab.end() - tab.start())
-			)
-
-		str_obj.addAttribute_value_range_(
-			ObjCInstance(c_void_p.in_dll(c,'NSForegroundColorAttributeName')), 
-			self.theme['foreground_color'],
-			NSRange(0, len_current_text))
-
-		nested_level = 0
-		
-		found_wrappers = find_wrappers(
-			current_text, 
-			self.all_wrappers)
-
-		positions = sorted(found_wrappers.keys())
-		len_wrappers = len(self.theme['wrappers'])
-
-		for position in positions:
-			# if the found wrapper is a push wrapper
-			if self.push_wrapper.match(found_wrappers[position]):
-				nested_level += 1
-				if nested_level < len_wrappers:
-					str_obj.addAttribute_value_range_(
-					  ObjCInstance(c_void_p.in_dll(c,'NSForegroundColorAttributeName')),
-					  self.theme['wrappers'][nested_level],
-					  NSRange(position,1))
-				continue
-			
-			if self.pop_wrapper.match(found_wrappers[position]):
-				if nested_level < len_wrappers:
-					str_obj.addAttribute_value_range_(
-					  ObjCInstance(c_void_p.in_dll(c,'NSForegroundColorAttributeName')),
-					  self.theme['wrappers'][nested_level],
-					  NSRange(position,1))
-				nested_level -= 1
-
-		nest_colors(str_obj, current_text, 0, self.syntax.syntax)
-
+		if current_position < len(self.tv.text) - 1:			
+			self.tvo.setSelectedRange_(NSRange(current_position, 0))
+			self.tvo.scrollRangeToVisible(NSRange(current_position, 0))
 		if highlight_range and 'highlight_color' in self.theme:
 			length = highlight_range[1] - highlight_range[0]
 			# workaround
-			if length >= len(current_text):
-				length = len(current_text) - 1
+			if length >= len(self.tv.text):
+				length = len(self.tv.text) - 1
 			str_obj.addAttribute_value_range_(
-				ObjCInstance(c_void_p.in_dll(c,'NSBackgroundColorAttributeName')), 
+				bg_color_attr, 
 				self.theme['highlight_color'],
 				NSRange(highlight_range[0], length))
-
-		if initial or (str_obj != original_str_obj):
-		  tvo.setAllowsEditingTextAttributes_(True)
-		  tvo.setAttributedText_(str_obj)
-		if current_position < len(current_text):			
-			tv.selected_range = (current_position, current_position)
-			tv.content_inset = (0,0,0,0)
-			tvo.scrollRangeToVisible(NSRange(current_position, 1))
-
-def nest_colors(str_obj, current_text, offset, parse_patterns):
-	
-	for pattern in parse_patterns:
-
-		if 'type' in pattern:
-			continue # already done
-
-		sre = pattern['pattern'].finditer(current_text)
-
-		for m in sre:
-			start, end = m.span()
-			length = end-start
-			
-			if 'font' in pattern['self']: 
-				  
-			  str_obj.addAttribute_value_range_(
-				ObjCInstance(c_void_p.in_dll(c,'NSFontAttributeName')), 
-				pattern['self']['font'], 
-				NSRange(start + offset,length))
-			
-			if 'color' in pattern['self']:
-			  str_obj.addAttribute_value_range_(
-				ObjCInstance(c_void_p.in_dll(c,'NSForegroundColorAttributeName')),
-				pattern['self']['color'],
-				NSRange(start + offset,length)
-			  )
-
-			if 'groups' in pattern:
-				for g in pattern['groups']:
-					group_start, group_end = m.span(g)
-					group_length = group_end - group_start
-
-					if 'font' in pattern['groups'][g]: 
-						str_obj.addAttribute_value_range_(
-						ObjCInstance(c_void_p.in_dll(c,'NSFontAttributeName')), 
-						pattern['groups'][g]['font'], 
-						NSRange(group_start + offset, group_length))
-
-					if 'color' in pattern['groups'][g]:
-						str_obj.addAttribute_value_range_(
-						ObjCInstance(c_void_p.in_dll(c,'NSForegroundColorAttributeName')),
-						pattern['groups'][g]['color'],
-						NSRange(group_start + offset, group_length)
-					  )
-					
-			if 'inside' in pattern:
-				substring = current_text[start:end]
-				nest_colors(str_obj, substring, start, pattern['inside'])
-
-def get_push_pop_patterns(syntax):
-	for p in syntax:
-		if 'type' in p and p['type'] == 'push':
-			push_wrapper = p['pattern'] 
-			pop_wrapper = p['pop']['pattern']
-			return (push_wrapper, pop_wrapper)
-	return [None, None]
-
-def find_wrappers(string, wrappers):
-	found_wrappers = {}
-	for w in wrappers:
-		s = w.finditer(string)
-		for item in s:
-			found_wrappers[item.start()] = item.group()
-	return found_wrappers
