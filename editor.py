@@ -34,7 +34,7 @@ class BaseEditor(ui.View):
 		else:
 			self.theme = theme_light
 
-		self.thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=10)
+		self.thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=30)
 		self.current_open_file = None
 		self.current_open_file_original_contents = None
 		self.saved = None
@@ -68,7 +68,9 @@ class BaseEditor(ui.View):
 	def setup_syntax_highlighter(self):
 		self.syntax_highlighter = SyntaxHighlighter(
 			self.syntax,
-			self.theme)
+			self.theme,
+			self.tv,
+			self.tvo)
 
 	def setup_buttons(self, buttons):
 		if not buttons:
@@ -95,7 +97,7 @@ class BaseEditor(ui.View):
 			self.tv.text=contents
 			self.current_open_file = open_file
 			self.current_open_file_original_contents = contents
-			self.refresh_syntax_highlighting()
+			self.syntax_highlighter.refresh()
 
 	def choose_theme(self, sender):
 		self.autoCompleter.set_items(self.theme_options, 'set_theme')
@@ -213,7 +215,4 @@ class BaseEditor(ui.View):
 	def get_file_contents(self, filename):
 		with open(filename, 'r', encoding='utf-8') as d:
 			contents = d.read()
-		return contents
-
-	def refresh_syntax_highlighting(self, text=''):   
-		self.syntax_highlighter.setAttribs(self.tv, self.tvo, self.theme)
+		return contents		

@@ -41,7 +41,10 @@ class AutoCompleter:
 		else:
 			items = list(self.all_items)
 
+		if isinstance(items[0],list):
+			items = [i[0] for i in items] # for now no secondaray feautre
 		lowered_items = {}
+
 		for i in items:
 			lowered_items[i] = {}
 			lowered_items[i]['lower'] = i.lower()
@@ -83,7 +86,7 @@ class AutoCompleter:
 		self.current_entry = new_entry
 		self._set_current_items(total_options)
 
-	def hide(self):		
+	def hide(self):
 		self.dropDown.hidden = True
 		self.search.hidden = True
 		self.reset()
@@ -97,10 +100,11 @@ class AutoCompleter:
 		self.current_entry = ''
 		self.showing = None
 
-	def tableview_did_select(self, tableview, section, row):
-		self.search.text = self.dropDown.data_source.items[row]
+	def tableview_did_select(self, tableview, section, selected_row):
+		self.search.text = self.dropDown.data_source.items[selected_row]
+		original_row = self.all_items.index(self.dropDown.data_source.items[selected_row])
 		self.hide()
-		return self.action(self.dropDown.data_source.items[row])
+		return self.action(original_row)
 
 	def _set_current_items(self, items):
 		self.current_items = list(items)
@@ -122,15 +126,10 @@ class AutoCompleter:
 		else:
 			self.dropDown.height = self.search.height * len(items)
 
-	def set_items(self,
-		items,
-		name,
-		allow_new=False):
-
-		if isinstance(items, dict):
-			self.all_items = list(items.keys())
-		if isinstance(items, list):
-			self.all_items = items
+	def set_items(self, items, name, allow_new=False):
+		self.all_items = items
+		if isinstance(items[0],list):
+			self.all_items = [i[0] for i in items] # for now no secondaray feautre
 		self.allowing_new = allow_new
 		self.showing = name
 		self.update_and_sort_options(self.search, all_items_updated=True)
