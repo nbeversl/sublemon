@@ -41,7 +41,7 @@ class AutoCompleter:
 		else:
 			items = list(self.all_items)
 
-		if isinstance(items[0],list):
+		if len(items) and isinstance(items[0],list):
 			items = [i[0] for i in items] # for now no secondaray feautre
 		lowered_items = {}
 
@@ -128,7 +128,7 @@ class AutoCompleter:
 
 	def set_items(self, items, name, allow_new=False):
 		self.all_items = items
-		if isinstance(items[0],list):
+		if len(items) and isinstance(items[0],list):
 			self.all_items = [i[0] for i in items] # for now no secondaray feautre
 		self.allowing_new = allow_new
 		self.showing = name
