@@ -1,7 +1,6 @@
 from objc_util import *
 import re
 import time
-import urtext.syntax as syntax
 
 class SyntaxHighlighter:
 
