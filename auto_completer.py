@@ -116,13 +116,11 @@ class AutoCompleter:
 			self.items_comparision[item] = item.lower()
 		self.dropDown.data_source.items = items		
 		if len(items):
-			max_items_showing = (
-				self.view_height - self.search.height 
-				) / len(items)
+			max_items_showing = ((self.view_height/2) - self.search.height) / len(items)
 		else:
 			max_items_showing = 5
 		if len(items) > max_items_showing:
-			self.dropDown.height = self.view_height
+			self.dropDown.height = self.view_height / 2
 		else:
 			self.dropDown.height = self.search.height * len(items)
 
@@ -155,7 +153,7 @@ class AutoCompleter:
 		self.search.x = view_width / 10
 		self.search.y = layout['text_view_distance_from_top'] + layout['padding']['md']
 		self.search.border_width = layout['button_border_width']
-		self.dropDown.height = view_height
+		self.dropDown.height = view_height / 2
 
 class SearchFieldDelegate:
 	
