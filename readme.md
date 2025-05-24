@@ -21,9 +21,11 @@ Put sublemon into `Python Modules/site-packges/user`
 
 ## Usage
 
-`from sublemon.editor import BaseEditor`
-`editor = BaseEditor()`
-`editor.show()`
+```
+from sublemon.editor import BaseEditor
+editor = BaseEditor()
+editor.show()
+```
 
 (see https://github.com/nbeversl/sublemon/blob/master/editor.py).
 
