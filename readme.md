@@ -1,4 +1,4 @@
-# Sublemon Text Editor
+# Sublemon Text Editor for iOS (in Pythonista)
 
 ## About
 
@@ -13,9 +13,18 @@ Sublemon is coyly named after [Sublime](https://www.sublimetext.com/). It replic
 - Extensible theming
 - Array of customizable keyboard buttons
 
+## Install
+
+Requires [thefuzz](https://github.com/seatgeek/thefuzz)
+
+Put sublemon into `Python Modules/site-packges/user`
+
 ## Usage
 
-`BaseEditor.show()`
+`from sublemon.editor import BaseEditor`
+`editor = BaseEditor()`
+`editor.show()`
+
 (see https://github.com/nbeversl/sublemon/blob/master/editor.py).
 
 ## Development
@@ -26,6 +35,3 @@ Sublemon was separated out for modularity and currently exists mostly as an Urte
 - Needs a status bar
 - Multiple tabs
 - Other syntaxes
-
-
-
